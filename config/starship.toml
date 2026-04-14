@@ -1,0 +1,49 @@
+"$schema" = 'https://starship.rs/config-schema.json'
+
+command_timeout = 8000
+
+format = '$env_var$hostname$all'
+
+[battery]
+full_symbol = "• "
+charging_symbol = "⇡ "
+discharging_symbol = "⇣ "
+unknown_symbol = "❓ "
+empty_symbol = "❗ "
+
+[aws]
+format = 'on [$symbol($profile)]($style) '
+
+[erlang]
+symbol = "ⓔ "
+
+[nodejs]
+symbol = "[⬢](bold green) "
+
+[pulumi]
+symbol = "🧊 "
+
+[shell]
+disabled = false
+
+[directory]
+use_os_path_sep = false
+truncation_symbol = '.../'
+
+[ruby]
+detect_variables=[]
+
+[hostname]
+ssh_only = false
+style = 'bold dimmed yellow'
+format = '[$ssh_symbol$hostname]($style) '
+
+[env_var.PLATFORM_PROMPT]
+format="[$env_value](bold dimmed yellow) "
+
+[git_branch]
+format = '[$symbol$branch(:$remote_branch)]($style) '
+
+[terraform]
+format = '[$symbol$version]($style) '
+disabled = true

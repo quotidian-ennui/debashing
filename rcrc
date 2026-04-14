@@ -1,0 +1,5 @@
+TAGS="linux"
+EXCLUDES="functions bootstrap.sh src LICENSE README.md"
+COPY_ALWAYS="kube/config"
+UNDOTTED="bin"
+SYMLINK_DIRS="bin hooks"

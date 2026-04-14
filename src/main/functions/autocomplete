@@ -1,0 +1,36 @@
+_git_fixup() {
+  mapfile -t COMPREPLY < <(_fzf_git_hashes --no-multi)
+  printf '\e[5n'
+}
+
+# Explicit because .local/bin might not be in the path yet.
+if [[ -f "$LOCAL_BIN/just" ]]; then
+  eval "$($LOCAL_BIN/just --completions bash)"
+fi
+
+if builtin type -p gh &>/dev/null; then
+  eval "$(gh completion -s bash)"
+fi
+
+if builtin type -p aws_completer &>/dev/null; then
+  aws_completer_path="$(which aws_completer)"
+  if builtin type -p aws &>/dev/null; then
+    complete -C "${aws_completer_path}" aws
+  fi
+  if builtin type -p awslocal &>/dev/null; then
+    complete -C "${aws_completer_path}" awslocal
+  fi
+fi
+
+if builtin type -p zoxide &>/dev/null; then
+  eval "$(zoxide init bash)"
+fi
+if builtin type -p direnv &>/dev/null; then
+  eval "$(direnv hook bash)"
+fi
+if [[ -f "$LOCAL_BIN/starship" ]]; then
+  eval "$($LOCAL_BIN/starship init bash)"
+fi
+
+# Make completion
+complete -W "\`grep -oE '^[a-zA-Z0-9_.-]+:([^=]|$)' ?akefile | sed 's/[^a-zA-Z0-9_.-]*$//'\`" make

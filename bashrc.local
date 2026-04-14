@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+
+export DOTFILES=$HOME/.dotfiles
+export LOCAL_BASH_FUNCTIONS=$DOTFILES/src/main/functions
+export LOCAL_BIN=$HOME/.local/bin
+
+source $LOCAL_BASH_FUNCTIONS/common-env
+source $LOCAL_BASH_FUNCTIONS/aliases
+source $LOCAL_BASH_FUNCTIONS/bash-functions
+source $LOCAL_BASH_FUNCTIONS/autocomplete
+
+export _ZO_EXCLUDE_DIRS="$HOME/.config/*:/etc/*"

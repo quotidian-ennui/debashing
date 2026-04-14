@@ -1,0 +1,123 @@
+# -*- mode: gitconfig; -*-
+# vim: set filetype=gitconfig:
+[gpg]
+	format = ssh
+
+[commit]
+	gpgsign = true
+
+[tag]
+	gpgsign = true
+
+[push]
+  default = current
+
+[pull]
+  rebase = false
+
+[fetch]
+  prune = false
+
+[rebase]
+  autoStash = false
+  autosquash = true
+
+[init]
+  defaultBranch = main
+
+[diff]
+  tool = difftastic
+
+[difftool]
+  prompt = false
+
+[difftool "difftastic"]
+  cmd = difft "$LOCAL" "$REMOTE"
+
+[pager]
+  difftool = true
+
+[absorb]
+  autoStageIfNothingStaged = true
+  oneFixupPerCommit = true
+
+[alias]
+  show-default-branch = "!f() { git remote show \"$1\" | grep 'HEAD branch' | cut -d' ' -f5; }; f"
+  origin-default = show-default-branch origin
+  upstream-default = show-default-branch upstream
+  ## Reset my fork back to upstream
+  reset-fork = "!f() { \
+    local_branch=$(git origin-default); \
+    upstream_branch=$(git upstream-default); \
+    git checkout \"${local_branch}\"; \
+    git fetch upstream; \
+    git reset --hard \"upstream/${upstream_branch}\"; \
+    git push origin --force; \
+  }; f"
+  reset-branch = "!f() { \
+    default_remote="$(git remote)"; \
+    current_branch="$default_remote/$(git branch --show-current)"; \
+    git fetch "$default_remote"; \
+    git reset --hard "$current_branch"; \
+  }; f"
+  feature = "!f(){ \
+    new_branch=\"$1\"; \
+    old_branch=$(git origin-default); \
+    git checkout \"$old_branch\"; \
+    git pull --ff-only; \
+    git checkout -b \"$new_branch\" \"$old_branch\"; \
+  };f"
+
+  chmod = "update-index --chmod=+x"
+  chmod-show = "ls-files --format='%(objectmode) %(path)'"
+  chmod-reset = "!git diff -p -R --no-ext-diff --no-color --diff-filter=M | grep -E '^(diff|(old|new) mode)' --color=never | git apply"
+
+  # Assume that files haven't changed, because we never want to check them in
+  #     $ git status
+  #     modified passwords.txt
+  #     modified foo.txt
+  #
+  #     $ git assume passwords.txt
+  #     $ git status
+  #     modified foo.txt
+  #
+  #     $ git assumed
+  #     passwords.txt
+  #
+  #     $ git unassume passwords.txt
+  #     $ git status
+  #     modified passwords.txt
+  #     modified foo.txt
+  assume   = update-index --assume-unchanged
+  unassume = update-index --no-assume-unchanged
+  assumed  = !"git ls-files -v | grep ^h | cut -c 3-"
+
+  branch-tidy = gone -pD
+  aliases = "!git config --get-regexp '^alias\\.' | cut -c 7- | sed 's/ / := /'"
+  # aliases = "!git config --get-regexp '^alias\\.' | cut -c 7- | cut -d ' ' -f1 | sort"
+  branches = branch -a
+  tags = "!git tag -n1 --list | sort -V"
+  stashes = stash list
+  root = rev-parse --show-toplevel
+  origin-branch = !git for-each-ref --format='%(upstream:short)' $(git symbolic-ref -q HEAD)
+  amend = commit --amend --no-edit
+  main = "!f() { \
+    main="$(git origin-default)"; \
+    git switch "$main"; \
+    git pull; \
+  }; f"
+
+  mod-update = "!f() { git submodule update --remote --rebase; }; f"
+  mod-diff = "!f() { git submodule foreach 'git diff'; }; f"
+  rebase-main = "!f() { git rebase -i --autosquash $(git origin-default)@{0}; }; f"
+  fixup = "!f() { \
+    hash=\"${1:-HEAD}\"; \
+    if [ $# -gt 0 ]; then \
+      shift; \
+    fi; \
+    git commit --fixup=$hash $@; \
+  }; f"
+  dft = difftool
+  dlog = "!f() { GIT_EXTERNAL_DIFF=difft git log -p --ext-diff $@; }; f"
+  hard = reset-branch
+  history = log --graph --abbrev-commit --decorate --format=format:'%C(bold blue)%h%C(reset) - %C(bold green)(%ar)%C(reset) %C(white)%s%C(reset) %C(dim white)- %an%C(reset)%C(bold yellow)%d%C(reset)'

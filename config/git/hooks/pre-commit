@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+hook_dir="$(cd "$(dirname "$0")" && pwd)"
+args=(hook-impl --hook-type=pre-commit --hook-dir="$hook_dir")
+
+function run-pre-commit() {
+  local configFile="$1"
+  shift
+  if type pre-commit &>/dev/null; then
+    pre-commit "${args[@]}" --config="${configFile}" -- "$@"
+  else
+    echo '=== warning: pre-commit not found.' 1>&2
+  fi
+}
+
+function run-global-hooks() {
+  dir=$(pwd)
+  if [[ ! $dir == *"gopass"* && ! $dir == *"password-store" ]]; then
+    if type gitleaks >/dev/null; then
+        gitleaks protect --staged --no-banner --no-color
+    fi
+    if [ -f "$HOME/.config/pre-commit/pre-commit-config.yaml" ]; then
+      run-pre-commit "$HOME/.config/pre-commit/pre-commit-config.yaml" "$@"
+    fi
+  fi
+}
+
+run-global-hooks "$@"
+
+if [ -f .pre-commit-config.yaml ]; then
+  run-pre-commit .pre-commit-config.yaml "$@"
+fi
+
+if [ -e ./.git/hooks/pre-commit ]; then
+  ./.git/hooks/pre-commit "$@"
+fi

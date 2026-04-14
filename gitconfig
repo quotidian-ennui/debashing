@@ -1,0 +1,22 @@
+[user]
+	signingKey = ~/.ssh/id_ed25519.pub
+	
+[core]
+	autocrlf = input
+	eol = lf
+	excludesfile = ~/.dotfiles/src/main/gitconfig/gitignore
+	fileMode = false
+	ignorecase = false
+	hooksPath = $HOME/.config/git/hooks
+
+[filter "lfs"]
+	clean = git-lfs clean -- %f
+	smudge = git-lfs smudge -- %f
+	required = true
+	process = git-lfs filter-process
+
+[credential]
+	helper = manager-core
+
+[include]
+  path= ~/.dotfiles/src/main/gitconfig/gitincludes.txt

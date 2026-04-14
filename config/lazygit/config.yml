@@ -1,0 +1,5 @@
+gui:
+  lang: en
+git:
+  overrideGpg: true
+

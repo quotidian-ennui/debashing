@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+
+PLATFORM_NAME="$(cat /etc/os-release | grep -e "^NAME=" | cut -f2 -d= | tr -d '"')"
+PLATFORM_VERSION="$(cat /etc/os-release | grep -e "^VERSION_ID=" | cut -f2 -d= | tr -d '"')"
+PLATFORM_ID="$(cat /etc/os-release | grep -e "^ID=" | cut -f2 -d= | tr -d '"')"
+
+export PLATFORM_PROMPT="$PLATFORM_NAME-$PLATFORM_VERSION"
+
+export EDITOR=vi
+export PAGER=less
+export HISTCONTROL=ignorespace:erasedups
+export HISTIGNORE=ls:exit:history:pwd:z
+
+if [[ -n "$WSL_DISTRO_NAME" ]]; then
+  export UNISONLOCALHOSTNAME="$(hostname)-wsl-$PLATFORM_ID"
+else
+  export UNISONLOCALHOSTNAME="$(hostname)-$PLATFORM_ID"
+fi
+
+set -o vi
+
+# cd $DOTFILES/ -> tab -> resolve the env var.
+shopt -s direxpand
+
+if [[ "$(type -t github_pat)" == "function" ]]; then
+  export -f github_pat
+fi
+if [[ "$(type -t gitlab_pat)" == "function" ]]; then
+  export -f gitlab_pat
+fi

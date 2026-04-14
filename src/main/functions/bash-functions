@@ -1,0 +1,148 @@
+#!/usr/bin/env bash
+
+function findGnu() {
+  local gnulessCmd=$1
+  local gnuCmd=g$gnulessCmd
+  if command -v "$gnuCmd" >/dev/null 2>&1; then
+    echo "$gnuCmd"
+  else
+    echo "$gnulessCmd"
+  fi
+}
+
+explorer() {
+  local args=$1
+  if [[ -n "$WSL_DISTRO_NAME" ]]; then
+    wsl-open ${args:-.}
+  else
+    if builtin type -P explorer >/dev/null 2>&1; then
+      "$(builtin type -P explorer)" ${args:-.} &
+    else
+      echo "No explorer found"
+    fi
+  fi
+}
+
+
+rawurlencode() {
+  local string="${1}"
+  local strlen=${#string}
+  local encoded=""
+  local pos c o
+
+  for (( pos=0 ; pos<strlen ; pos++ )); do
+     c=${string:$pos:1}
+     case "$c" in
+        [-_.~a-zA-Z0-9] ) o="${c}" ;;
+        * )               printf -v o '%%%02x' "'$c"
+     esac
+     encoded+="${o}"
+  done
+  echo "${encoded}"
+}
+
+
+freemem() {
+  if [[ -n "$WSL_DISTRO_NAME" ]]; then
+    echo 1 | sudo tee /proc/sys/vm/compact_memory >/dev/null 2>&1
+    echo 3 | sudo tee /proc/sys/vm/drop_caches >/dev/null 2>&1
+    echo "Did some scrubbing"
+  fi
+}
+
+watch () {
+  if [[ -z "$WSL_DISTRO_NAME" ]]; then
+    ARGS="${@}"
+    clear;
+    while(true); do
+      OUTPUT=$($ARGS)
+      clear
+      echo -e "Every 3.0s: $ARGS"
+      echo ""
+      echo -e "${OUTPUT[@]}"
+      sleep 3
+    done
+  else
+    /usr/bin/watch $@
+  fi
+}
+
+
+generate_resolv_conf() {
+  if [[ -n "$WSL_DISTRO_NAME" ]]; then
+    generated=$(mktemp --tmpdir resolv.conf.XXXXXX)
+    resolv_conf=$(powershell.exe -Command "Get-DnsClientServerAddress -AddressFamily ipv4 | Select-Object -ExpandProperty ServerAddresses" | sed 's/\r//g' | sort -u | xargs -n 1 echo nameserver)
+    echo "$resolv_conf" > "$generated"
+    if ! diff /etc/resolv.conf "$generated" >/dev/null; then
+      echo "$resolv_conf" | sudo tee /etc/resolv.conf
+      sudo chmod go+r /etc/resolv.conf
+    fi
+    rm "$generated"
+  fi
+}
+
+n ()
+{
+    # Block nesting of nnn in subshells
+    [ "${NNNLVL:-0}" -eq 0 ] || {
+        echo "nnn is already running"
+        return
+    }
+
+    # The behaviour is set to cd on quit (nnn checks if NNN_TMPFILE is set)
+    # If NNN_TMPFILE is set to a custom path, it must be exported for nnn to
+    # see. To cd on quit only on ^G, remove the "export" and make sure not to
+    # use a custom path, i.e. set NNN_TMPFILE *exactly* as follows:
+    #      NNN_TMPFILE="${XDG_CONFIG_HOME:-$HOME/.config}/nnn/.lastd"
+    export NNN_TMPFILE="${XDG_CONFIG_HOME:-$HOME/.config}/nnn/.lastd"
+
+    # Unmask ^Q (, ^V etc.) (if required, see `stty -a`) to Quit nnn
+    # stty start undef
+    # stty stop undef
+    # stty lwrap undef
+    # stty lnext undef
+
+    # The command builtin allows one to alias nnn to n, if desired, without
+    # making an infinitely recursive alias
+    command nnn "$@"
+
+    [ ! -f "$NNN_TMPFILE" ] || {
+        . "$NNN_TMPFILE"
+        rm -f -- "$NNN_TMPFILE" > /dev/null
+    }
+}
+
+mk8s() {
+  local action=$1
+  case "$action" in
+    info )
+      kubectl describe node $2
+      ;;
+    drain )
+      kubectl drain $2 --ignore-daemonsets
+      kubectl get node
+      ;;
+    top )
+      kubectl top pod -A --sort-by memory
+      ;;
+    pods )
+      kubectl get pods -A --field-selector "metadata.namespace!=kube-system,metadata.namespace!=metallb-system,metadata.namespace!=ingress" \
+            -o custom-columns="Name:metadata.name,Namespace:metadata.namespace,Status:status.phase" --sort-by=".metadata.namespace"
+      ;;
+    *)
+      echo "mk8s info | top | pods | drain [node]"
+      ;;
+  esac
+}
+
+reset_ntp() {
+  if [[ -n "$WSL_DISTRO_NAME" ]]; then
+    cd ~/bin && powershell.exe -File ResetTime.ps1
+  fi
+}
+
+path_append ()  { path_remove $1; export PATH="$PATH:$1"; }
+path_prepend () { path_remove $1; export PATH="$1:$PATH"; }
+path_remove ()  { export PATH=`echo -n $PATH | awk -v RS=: -v ORS=: '$0 != "'$1'"' | sed 's/:$//'`; }
+
+export -f findGnu
