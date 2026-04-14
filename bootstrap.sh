@@ -112,7 +112,7 @@ action_userspace() {
     cp rcrc "$HOME/.rcrc"
   fi
   if builtin type -p rcup; then
-    rcup
+    rcup -f
   fi
   if [[ -d "$HOME/ubuntu-dpm" ]]; then
     pushd "$HOME/ubuntu-dpm" >/dev/null
@@ -120,13 +120,12 @@ action_userspace() {
     popd >/dev/null
   else
     pushd "$HOME" >/dev/null
-    git clone http://github.com/quotidian-ennui/ubuntu-dpm
+    git clone https://github.com/quotidian-ennui/ubuntu-dpm
     popd >/dev/null
   fi
   pushd "$HOME/ubuntu-dpm" >/dev/null
   ./bootstrap.sh repos
   ./bootstrap.sh baseline
-  "$HOME"/.local/bin/just tools
   popd >/dev/null
 }
 
